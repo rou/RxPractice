@@ -29,7 +29,7 @@ public class BroadcastConfigureTest {
 
     @After
     public void tearDown() {
-        //mConfigure.reset();
+        mConfigure.reset();
     }
 
     @Test
