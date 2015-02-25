@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 
 import rx.Subscriber;
+import rx.Subscription;
 import rx.functions.Action1;
 
 @RunWith(AndroidJUnit4.class)
@@ -49,14 +50,10 @@ public class BroadcastConfigureTest {
         Subscriber<Boolean> subscriber = new Subscriber<Boolean>() {
             @Override
             public void onCompleted() {
-
             }
-
             @Override
             public void onError(Throwable e) {
-
             }
-
             @Override
             public void onNext(Boolean isMute) {
                 latch.countDown();
@@ -68,5 +65,18 @@ public class BroadcastConfigureTest {
         mConfigure.setIsMute(true);
         latch.await();
         mConfigure.isMuteObservable().unsafeSubscribe(subscriber);
+    }
+
+    @Test
+    public void isMuteの変更が通知されるテストをlambdaで書いてみる() throws Throwable {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Subscription subscription = mConfigure.isMuteObservable().subscribe(isMute -> {
+            latch.countDown();
+            Assert.assertEquals(isMute, mConfigure.getIsMute());
+            Assert.assertTrue(isMute);
+        });
+        mConfigure.setIsMute(true);
+        latch.await();
+        subscription.unsubscribe();
     }
 }

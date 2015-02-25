@@ -9,6 +9,7 @@ import rx.Subscriber;
 public class BroadcastConfigure {
     private static final String PREFERENCES_NAME = "broadcastConfigure";
     private SharedPreferences mSharedPreferences;
+    private Observable<Boolean> mIsMuteObservable;
 
     private final class SharedPreferencesName {
         public static final String IS_MUTE = "isMute";
@@ -20,14 +21,20 @@ public class BroadcastConfigure {
 
     public BroadcastConfigure(Context context) {
         mSharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        mSharedPreferences.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                switch (key) {
-                    case SharedPreferencesName.IS_MUTE:
-                        isMuteObservable().nest();
-                        break;
+        mSharedPreferences.registerOnSharedPreferenceChangeListener((SharedPreferences sharedPreferences, String key) -> {
+            switch (key) {
+                case SharedPreferencesName.IS_MUTE:
+                    isMuteObservable().nest();
+                    break;
+            }
+        });
+        mIsMuteObservable = Observable.create(observer -> {
+            try {
+                if (!observer.isUnsubscribed()) {
+                    observer.onNext(getIsMute());
                 }
+            } catch (Exception exception) {
+                observer.onError(exception);
             }
         });
     }
@@ -41,18 +48,7 @@ public class BroadcastConfigure {
     }
 
     public Observable<Boolean> isMuteObservable() {
-        return Observable.create(new Observable.OnSubscribe<Boolean>() {
-            @Override
-            public void call(Subscriber<? super Boolean> observer) {
-                try {
-                    if (!observer.isUnsubscribed()) {
-                        observer.onNext(getIsMute());
-                    }
-                } catch (Exception exception) {
-                    observer.onError(exception);
-                }
-            }
-        });
+        return mIsMuteObservable;
     }
 
     public void reset() {
