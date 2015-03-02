@@ -24,7 +24,7 @@ public class BroadcastConfigure {
         mSharedPreferences.registerOnSharedPreferenceChangeListener((SharedPreferences sharedPreferences, String key) -> {
             switch (key) {
                 case SharedPreferencesName.IS_MUTE:
-                    isMuteObservable().nest();
+                    mIsMuteObservable.nest();
                     break;
             }
         });

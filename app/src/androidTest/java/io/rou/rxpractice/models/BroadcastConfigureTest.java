@@ -22,10 +22,12 @@ import rx.functions.Action1;
 public class BroadcastConfigureTest {
 
     private BroadcastConfigure mConfigure;
+    private CountDownLatch mOnceLatch;
 
     @Before
     public void setUp() {
         mConfigure = new BroadcastConfigure(InstrumentationRegistry.getContext());
+        mOnceLatch = new CountDownLatch(1);
     }
 
     @After
@@ -46,7 +48,6 @@ public class BroadcastConfigureTest {
 
     @Test
     public void isMuteの変更が通知される() throws Throwable {
-        final CountDownLatch latch = new CountDownLatch(1);
         Subscriber<Boolean> subscriber = new Subscriber<Boolean>() {
             @Override
             public void onCompleted() {
@@ -56,27 +57,41 @@ public class BroadcastConfigureTest {
             }
             @Override
             public void onNext(Boolean isMute) {
-                latch.countDown();
+                mOnceLatch.countDown();
                 Assert.assertEquals(isMute, mConfigure.getIsMute());
                 Assert.assertTrue(isMute);
             }
         };
-        mConfigure.isMuteObservable().subscribe(subscriber);
+        Subscription subscription = mConfigure.isMuteObservable().subscribe(subscriber);
         mConfigure.setIsMute(true);
-        latch.await();
-        mConfigure.isMuteObservable().unsafeSubscribe(subscriber);
+        mOnceLatch.await();
+        subscription.unsubscribe();
+    }
+
+    @Test
+    public void isMuteの変更が通知されるのをAction1で受け取る() throws Throwable {
+        Subscription subscription = mConfigure.isMuteObservable().subscribe(new Action1<Boolean>() {
+            @Override
+            public void call(Boolean isMute) {
+                mOnceLatch.countDown();
+                Assert.assertEquals(isMute, mConfigure.getIsMute());
+                Assert.assertTrue(isMute);
+            }
+        });
+        mConfigure.setIsMute(true);
+        mOnceLatch.await();
+        subscription.unsubscribe();
     }
 
     @Test
     public void isMuteの変更が通知されるテストをlambdaで書いてみる() throws Throwable {
-        final CountDownLatch latch = new CountDownLatch(1);
         Subscription subscription = mConfigure.isMuteObservable().subscribe(isMute -> {
-            latch.countDown();
+            mOnceLatch.countDown();
             Assert.assertEquals(isMute, mConfigure.getIsMute());
             Assert.assertTrue(isMute);
         });
         mConfigure.setIsMute(true);
-        latch.await();
+        mOnceLatch.await();
         subscription.unsubscribe();
     }
 }
